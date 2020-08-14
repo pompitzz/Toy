@@ -1,34 +1,48 @@
 package me.sun.excel;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import me.sun.excel.cell.CellStyleContext;
 import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.*;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class MyRow {
+public class RowWrapper {
     private int cellNumber;
     private Row row;
+    @Setter
     private CellStyle defaultStyle;
+    @Getter
+    private Map<Integer, Cell> cellStore;
 
-    public static MyRow init(Row row) {
-        MyRow myRow = new MyRow();
-        myRow.row = row;
-        myRow.cellNumber = 0;
-        return myRow;
+    public static RowWrapper init(Row row) {
+        RowWrapper rowWrapper = new RowWrapper();
+        rowWrapper.row = row;
+        rowWrapper.cellNumber = 0;
+        rowWrapper.cellStore = new TreeMap<>();
+        return rowWrapper;
     }
 
-    public MyRow writeCell(Long value) {
+    public static RowWrapper init(Row row, CellStyle defaultStyle) {
+        RowWrapper rowWrapper = init(row);
+        rowWrapper.defaultStyle = defaultStyle;
+        return rowWrapper;
+    }
+
+    public RowWrapper writeCell(Long value) {
         Cell cell = getCell();
         cell.setCellValue(value);
         applyStyle(cell);
         return this;
     }
 
-    public MyRow writeHyperLink(String url, String text) {
+    public RowWrapper writeHyperLink(String url, String text) {
         Workbook workbook = row.getSheet().getWorkbook();
         Hyperlink hyperlink = workbook.getCreationHelper().createHyperlink(HyperlinkType.URL);
         hyperlink.setAddress(url);
@@ -48,7 +62,7 @@ public class MyRow {
         return this;
     }
 
-    public MyRow writeCell(String value) {
+    public RowWrapper writeCell(String value) {
         Cell cell = getCell();
         cell.setCellValue(value);
         applyStyle(cell);
@@ -62,18 +76,15 @@ public class MyRow {
     }
 
     public Cell getCell() {
-        return getCell(cellNumber, true);
+        return getCellWithComputeIfAbsent(cellNumber, true);
     }
 
     public Cell getCell(int index) {
-        return getCell(index, false);
+        return getCellWithComputeIfAbsent(index, false);
     }
 
-    public Cell getCell(int index, boolean usingField) {
-        Cell cell = row.getCell(index);
-        if (Objects.isNull(cell)) {
-            cell = row.createCell(index);
-        }
+    public Cell getCellWithComputeIfAbsent(int index, boolean usingField) {
+        Cell cell = cellStore.computeIfAbsent(index, key -> row.createCell(key));
         if (usingField) {
             plusCellNumber();
         }
