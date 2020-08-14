@@ -35,7 +35,7 @@ public class RowWrapper {
         return rowWrapper;
     }
 
-    public RowWrapper writeCell(Long value) {
+    public RowWrapper writeCell(Integer value) {
         Cell cell = getCell();
         cell.setCellValue(value);
         applyStyle(cell);
