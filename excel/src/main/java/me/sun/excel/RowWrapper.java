@@ -15,6 +15,7 @@ import java.util.TreeMap;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RowWrapper {
     private int cellNumber;
+    @Getter
     private Row row;
     @Setter
     private CellStyle defaultStyle;

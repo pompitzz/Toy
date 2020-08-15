@@ -29,13 +29,27 @@ public class ExcelWriteService {
     }
 
     private void writeRow(RowWrapper rowWrapper, LoggingModel loggingModel) {
+        preProcess(rowWrapper);
+
         rowWrapper.writeCell(loggingModel.getCause())
                 .writeCell(loggingModel.getKey())
                 .writeCell(loggingModel.getDetailedException())
                 .writeCell(loggingModel.getCount());
 
+        postProcess(rowWrapper);
+    }
+
+    private void preProcess(RowWrapper rowWrapper) {
+        rowWrapper.getRow().setHeight(ExcelUtils.toShort(40));
+    }
+
+    private void postProcess(RowWrapper rowWrapper) {
         CellStyleContext cellStyleContext = CellStyleContext.init()
                 .addStyles(CellStyleContexts.ALL_CENTER);
         CellUtils.applyStyle(rowWrapper.getCellStore(), cellStyleContext);
+
+        Sheet sheet = rowWrapper.getRow().getSheet();
+        rowWrapper.getCellStore().values()
+                .forEach(cell -> sheet.autoSizeColumn(cell.getColumnIndex()));
     }
 }
