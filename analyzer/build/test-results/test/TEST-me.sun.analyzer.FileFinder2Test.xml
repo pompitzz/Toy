@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="me.sun.analyzer.FileFinder2Test" tests="1" skipped="0" failures="0" errors="0" timestamp="2021-05-26T16:22:48" hostname="Dongmyeongui-MacBookPro.local" time="32.473">
-  <properties/>
-  <testcase name="getFiles()" classname="me.sun.analyzer.FileFinder2Test" time="32.473"/>
-  <system-out><![CDATA[634910
-]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

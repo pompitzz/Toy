@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -19,14 +18,14 @@ public class FileReader {
     private static final int THREADS = 20;
 
     private final Set<File> files;
-    private final Predicate<String> linePredicate;
+    private final LineMatcher lineMatcher;
 
-    public void read() {
+    public List<FileReadRecord> read() {
         List<Set<File>> dividedFiles = getDividedFiles();
-        List<CompletableFuture<List<FileReadReport>>> futures = dividedFiles.stream()
+        List<CompletableFuture<List<FileReadRecord>>> futures = dividedFiles.stream()
                 .map(this::readFilesAsync)
                 .collect(Collectors.toList());
-        Map<File, List<FileReadReport>> result = futures.stream()
+        return futures.stream()
                 .map(future -> {
                     try {
                         return future.get();
@@ -35,38 +34,30 @@ public class FileReader {
                     }
                 })
                 .flatMap(Collection::stream)
-                .collect(Collectors.groupingBy(FileReadReport::getFile));
-
-        result.forEach((file, fileReadReports) -> {
-            System.out.println("======================================================================================================");
-            System.out.println(String.format("### %s ###", file.getName()));
-            fileReadReports.forEach(fileReadReport -> {
-                System.out.println(String.format(" %s -> %s", fileReadReport.getLineNumber(), fileReadReport.getLine().trim()));
-            });
-        });
+                .collect(Collectors.toList());
     }
 
-    private CompletableFuture<List<FileReadReport>> readFilesAsync(Set<File> files) {
+    private CompletableFuture<List<FileReadRecord>> readFilesAsync(Set<File> files) {
         return CompletableFuture.supplyAsync(() -> readFiles(files));
     }
 
-    private List<FileReadReport> readFiles(Set<File> files) {
-        List<FileReadReport> fileReadReports = new LinkedList<>();
+    private List<FileReadRecord> readFiles(Set<File> files) {
+        List<FileReadRecord> fileReadRecords = new LinkedList<>();
         for (File file : files) {
             try {
                 List<String> lines = Files.readAllLines(Path.of(file.toURI()));
                 for (int i = 0; i < lines.size(); i++) {
                     int lineNumber = i + 1;
                     String line = lines.get(i);
-                    if (linePredicate.test(line)) {
-                        fileReadReports.add(new FileReadReport(file, line, lineNumber));
+                    if (lineMatcher.match(line)) {
+                        fileReadRecords.add(new FileReadRecord(file, line, lineNumber));
                     }
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        return fileReadReports;
+        return fileReadRecords;
     }
 
     private List<Set<File>> getDividedFiles() {

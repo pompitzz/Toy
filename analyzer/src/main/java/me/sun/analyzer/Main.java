@@ -1,17 +1,37 @@
 package me.sun.analyzer;
 
-import me.sun.analyzer.filefind.FileFinder;
+import me.sun.analyzer.filefind.FileMatcher;
 import me.sun.analyzer.filefind.JavaFileMatcher;
-import me.sun.analyzer.filefind.sync.SynchronousFileFinder;
 
-import java.io.File;
-import java.util.Set;
+import java.util.List;
+import java.util.regex.Pattern;
 
 public class Main {
+
+    public static final List<String> PATHS = List.of("/Users/dongmyeonglee/Projects/msa-study/spring-boot-study/src");
+
+    public static final FileMatcher FILE_MATCHER = CompositeFileMatcherBuilder.builder()
+            .addMatcher(JavaFileMatcher.INSTANCE)
+            .and();
+
+    public static final LineMatcher PATH_VARIABLE = StringMatcherBuilder.builder()
+            .contains(Pattern.compile("(?i)long"))
+            .notContains(Pattern.compile("\\{|\\}"))
+            .notContains("PathVariable")
+            .and();
+
+    public static final FileReadReporter FILE_READ_REPORTER = ConsoleFileReadReporter.builder()
+            .showLine(true)
+            .showOnlyClassName(true)
+            .build();
+
     public static void main(String[] args) {
-        FileFinder fileFinder = new SynchronousFileFinder(JavaFileMatcher.INSTANCE);
-        Set<File> files = fileFinder.find("/Users/dongmyeonglee/Projects/tools/tools-server");
-        FileReader fileReader = new FileReader(files, line -> line.contains("Long"));
-        fileReader.read();
+        Runner.builder()
+                .paths(PATHS)
+                .fileMatcher(FILE_MATCHER)
+                .lineMatcher(PATH_VARIABLE)
+                .fileReadReporter(FILE_READ_REPORTER)
+                .build()
+                .doRun();
     }
 }

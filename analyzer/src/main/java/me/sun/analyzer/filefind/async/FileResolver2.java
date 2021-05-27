@@ -2,6 +2,7 @@ package me.sun.analyzer.filefind.async;
 
 import lombok.Builder;
 import me.sun.analyzer.filefind.FileMatcher;
+import me.sun.analyzer.utils.CollectionUtils;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -51,35 +52,13 @@ public class FileResolver2 {
         Set<File> files = new LinkedHashSet<>();
         Set<File> directories = new LinkedHashSet<>();
         parse(dir, thread, files, directories);
-        List<Set<File>> directoriesSet = IntStream.range(0, thread)
-                .mapToObj(i -> new LinkedHashSet<File>())
-                .collect(Collectors.toList());
-        int index = 0;
-        for (File directory : directories) {
-            directoriesSet.get(index).add(directory);
-            index = (index + 1) % directoriesSet.size();
-        }
+        List<List<File>> directoriesList = CollectionUtils.roundRobin(directories, thread);
         return Context.builder()
                 .files(files)
-                .directoriesSet(directoriesSet)
+                .directoriesSet(directoriesList.stream().map(LinkedHashSet::new).collect(Collectors.toList()))
                 .build();
     }
-/*
-- A
-    - A-1
-    - A-2
-    - A-3
-- B
-    - A-1
-        - A
-            -
-        - A
-            -
-- C
-    - A-1
-    - A-2
-    - A-3
- */
+
     private void parse(File file, int thread, Set<File> files, Set<File> directories) {
         if (file.isDirectory()) {
             Set<File> dirs = new LinkedHashSet<>();
